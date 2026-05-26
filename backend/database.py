@@ -88,7 +88,7 @@ def create_extraction(conn: sqlite3.Connection, extraction_id: str, file_name: s
     """Insert a new extraction record with status 'processing'."""
     conn.execute(
         """INSERT INTO extraction (id, file_name, file_size_kb, status, model_used, created_at)
-           VALUES (?, ?, ?, 'processing', 'claude-sonnet-4-20250514', ?)""",
+           VALUES (?, ?, ?, 'processing', 'claude-sonnet-4-6', ?)""",
         (extraction_id, file_name, file_size_kb, datetime.now(timezone.utc).isoformat()),
     )
 
