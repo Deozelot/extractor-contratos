@@ -1,8 +1,19 @@
 import sqlite3
 import uuid
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Generator
+
+_EXTRACTION_UPDATABLE = frozenset({
+    "status", "page_count", "chunks_processed", "chunks_total",
+    "tokens_consumed", "completed_at", "model_used",
+})
+
+_OBLIGATION_UPDATABLE = frozenset({
+    "obligation_type", "description", "responsible_party", "deadline",
+    "periodicity", "source_clause", "source_page", "source_fragment",
+    "confidence", "review_status",
+})
 
 DATABASE_PATH = "extractor.db"
 
@@ -78,14 +89,17 @@ def create_extraction(conn: sqlite3.Connection, extraction_id: str, file_name: s
     conn.execute(
         """INSERT INTO extraction (id, file_name, file_size_kb, status, model_used, created_at)
            VALUES (?, ?, ?, 'processing', 'claude-sonnet-4-20250514', ?)""",
-        (extraction_id, file_name, file_size_kb, datetime.utcnow().isoformat()),
+        (extraction_id, file_name, file_size_kb, datetime.now(timezone.utc).isoformat()),
     )
 
 
 def update_extraction(conn: sqlite3.Connection, extraction_id: str, **kwargs) -> None:
-    """Update arbitrary fields on an extraction record."""
+    """Update fields on an extraction row. Only known columns are allowed."""
     if not kwargs:
         return
+    invalid = set(kwargs) - _EXTRACTION_UPDATABLE
+    if invalid:
+        raise ValueError(f"Unknown extraction columns: {invalid}")
     sets = ", ".join(f"{k} = ?" for k in kwargs)
     values = list(kwargs.values()) + [extraction_id]
     conn.execute(f"UPDATE extraction SET {sets} WHERE id = ?", values)
@@ -157,9 +171,12 @@ def get_obligations(conn: sqlite3.Connection, extraction_id: str) -> list[sqlite
 
 
 def update_obligation(conn: sqlite3.Connection, obligation_id: str, **kwargs) -> None:
-    """Update arbitrary fields on an obligation record."""
+    """Update fields on an obligation row. Only known columns are allowed."""
     if not kwargs:
         return
+    invalid = set(kwargs) - _OBLIGATION_UPDATABLE
+    if invalid:
+        raise ValueError(f"Unknown obligation columns: {invalid}")
     sets = ", ".join(f"{k} = ?" for k in kwargs)
     values = list(kwargs.values()) + [obligation_id]
     conn.execute(f"UPDATE obligation SET {sets} WHERE id = ?", values)
