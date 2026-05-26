@@ -69,6 +69,8 @@ def make_chunks(pages: list[PageText], chunk_tokens: int = 2000, overlap_tokens:
                 )
             )
 
+        if end <= start:
+            break
         next_start = end - overlap_chars
         if next_start <= start:
             next_start = end

@@ -51,7 +51,7 @@ def test_empty_pages_returns_no_chunks():
     assert make_chunks(pages) == []
 
 
-def test_pages_with_only_whitespace_excluded():
+def test_make_chunks_skips_whitespace_only_page_text():
     from extractor import extract_pages
     # We can't test extract_pages without a real PDF, but we can verify
     # that make_chunks handles PageText with empty text gracefully
